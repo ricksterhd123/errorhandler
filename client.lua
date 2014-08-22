@@ -86,7 +86,6 @@ function Error:createAndDisplay(id, msgToClient, msgToAdmin, originateFromWindow
 	return
 end
 
-addCommandHandler("errors", function() createError("0", "Hello world", "Nothing wrong just a test") end)
 function createError(id, cMsg, sMsg)
 	return Error:createAndDisplay(id, cMsg, sMsg)
 end
