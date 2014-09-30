@@ -7,8 +7,7 @@
 -- the same type.
 --------------------------------------------------
 function mType(typ, ...) 
-	if #arg == 0 or type(typ) ~= "string" then 
-		print("Woops")
+	if #arg == 0 or type(typ) ~= "string" then
 		return false 
 	end
 	local i = 0
