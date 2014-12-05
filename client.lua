@@ -23,30 +23,36 @@ end
 
 local elements = {
 	window = {0.37, 0.30, 0.25, 0.37, "An error has occured", true},
-	button = {
+	--[[
+  button = {
 		okayBut = {34, 242, 274, 26, "OKAY", false		},	-- 'OKAY' button, etc
 	},
+  --]]
 
 	memo = {26, 36, 292, 196, false},
 }
 
--- g_errors is a list of errors that have been recorded and are sent to the server to get regulated.
-local g_errors = {}
-
-function sendError()
-	if #g_errors == 0 then return false end
-	local v = g_errors[#g_errors]
-	local success = triggerServerEvent("retrieveError", getRootElement(), v.id, v.msg)
-	if success then
-		table.remove(g_errors)
-		return true
-	end
-
-	assert(success)
+---------------------------------------------------
+-- Desc: Retrieve the error message that is
+-- written specifically for a dev, then trigger a 
+-- server side event that will send the message to 
+-- the various designated devs.
+--
+-- Params: (String) ID - The specific id of the error
+-- which allows the dev to know the origin of which 
+-- the error occured.
+-- (String) msg
+---------------------------------------------------
+function sendError(id, msg)
+  if mType("string", id, msg) then
+    local success = triggerServerEvent("retrieveError", getRootElement(), id, msg)
+    return true
+  end
+  return false
 end
 
 local Error = {}
-
+local opened = 0
 
 --------------------------------------------------
 -- Desc: Create an error and allows multiple instances
@@ -61,17 +67,11 @@ local Error = {}
 function Error:createAndDisplay(id, msgToClient, msgToAdmin, originateFromWindow)
 	assert(mType("string", id, msgToClient, msgToAdmin))
 	local oWindow = originateFromWindow or false
-
-	local err = {}
-
-	err.id = id
-	err.msg = msgToAdmin
-	table.insert(g_errors, err)
-
 	local w = elements.window
 	local b = elements.button.okayBut
 	local m = elements.memo
 
+  -- setup gui
 	local window = guiCreateWindow(w[1], w[2], w[3], w[4], w[5], w[6])
 		guiWindowSetSizable(window, false)
 		guiSetProperty(window, "AlwaysOnTop", "True")
@@ -79,19 +79,30 @@ function Error:createAndDisplay(id, msgToClient, msgToAdmin, originateFromWindow
 		guiSetProperty(button, "NormalTextColour", "FFAAAAAA")
 	local memo = guiCreateMemo(m[1], m[2], m[3], m[4], msgToClient, m[5], window)
 		guiMemoSetReadOnly(memo, true)
+  
+  --[[ 
+  -- Now that an instance of the error gui has just been initialised,
+  -- increment a counter variable to check if multiple windows have been opened
+  -- to allow the user to close several windows at once without the cursor
+  -- disappearing.
+  --]]
 
+  opened = opened + 1
+
+
+  -- check for problems
 	assert(window and button and memo, "Couldn't create gui")
 	if not isCursorShowing() then showCursor(true) end
 
 	addEventHandler("onClientGUIClick", button, 
 		function()
 			window:setVisible(false)
-			if not oWindow and #g_errors < 2 then 
+			if not oWindow and #opened < 2 then 
 				showCursor(false)
 			end
 			destroyElement(window)
+      opened = opened - 1 -- Now one has been removed, decrement the variable.
 			sendError()
-			err = nil
 		end, false
 	)
 
